@@ -1,7 +1,7 @@
 import { TimeTask, useTimeTaskStore } from "@/stores/useTimeTaskStore";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronDown, X } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
 import {
   Button,
@@ -27,16 +27,13 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function AddScene() {
+export default function TimeTaskDetail() {
+  const { name } = useLocalSearchParams();
   const router = useRouter();
-  const [timeTasks, addTimeTask] = useTimeTaskStore((store) => [
+  const [timeTasks, updateTimeTask] = useTimeTaskStore((store) => [
     store.timeTasks,
-    store.addTimeTask,
+    store.updateTimeTask,
   ]);
-
-  const names = useMemo(() => {
-    return timeTasks.map((scene) => scene.name);
-  }, [timeTasks]);
 
   const [value, setValue] = useState<TimeTask>({
     kind: "day",
@@ -44,6 +41,22 @@ export default function AddScene() {
     operation: "open",
     delay: dayjs().add(5, "minute").utc().format(),
   });
+
+  const currentTimeTask = useMemo(() => {
+    return timeTasks.find((scene) => scene.name === name);
+  }, [name]);
+
+  useEffect(() => {
+    if (currentTimeTask) {
+      setValue(currentTimeTask);
+    }
+  }, [currentTimeTask]);
+
+  const names = useMemo(() => {
+    return timeTasks
+      .map((scene) => scene.name)
+      .filter((name) => name !== currentTimeTask?.name);
+  }, [timeTasks, currentTimeTask]);
 
   const [error, setError] = useState<string>();
   const handleSubmit = () => {
@@ -53,7 +66,7 @@ export default function AddScene() {
     if (names.includes(value.name)) {
       return setError("该名称已被使用");
     }
-    addTimeTask(value);
+    updateTimeTask(name as string, value);
     router.back();
   };
 
@@ -62,7 +75,7 @@ export default function AddScene() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: "添加定时任务",
+          title: "更新定时任务",
           headerLeft: (props) => {
             return (
               <Button
@@ -80,7 +93,7 @@ export default function AddScene() {
           headerRight: () => {
             return (
               <Button
-                label="添加"
+                label="更新"
                 link
                 linkColor={Colors.$textGeneral}
                 onPress={() => {
@@ -105,7 +118,7 @@ export default function AddScene() {
       />
 
       <SegmentedControl
-        initialIndex={1}
+        initialIndex={value.kind === "once" ? 0 : value.kind === "day" ? 1 : 2}
         onChangeIndex={(index) => {
           if (index === 0) {
             setValue({

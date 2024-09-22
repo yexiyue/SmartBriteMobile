@@ -148,7 +148,7 @@ export default function AddScene() {
         showClearButton
         validateOnBlur
         enableErrors
-        validate={["required", (value: string) => !names.includes(value)]}
+        validate={["required", (value) => !!value && !names.includes(value)]}
         validationMessage={["请输入名称", "该名称已被使用"]}
         maxLength={10}
         showCharCounter

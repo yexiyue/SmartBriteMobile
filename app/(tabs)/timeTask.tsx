@@ -1,5 +1,5 @@
-import { SceneItem } from "@/components/scenes/SceneItem";
-import { useScenesStore } from "@/stores/useScenesStore";
+import { TimeTaskItem } from "@/components/timeTask/TimeTaskItem";
+import { useTimeTaskStore } from "@/stores/useTimeTaskStore";
 import { useRouter } from "expo-router";
 import { Inbox, PlusIcon, Search } from "lucide-react-native";
 import { useMemo, useState } from "react";
@@ -16,20 +16,20 @@ import {
 export default function TimeTaskScreen() {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [scenes, removeScene] = useScenesStore((store) => [
-    store.scenes,
-    store.removeScene,
+  const [timeTasks, removeTimeTask] = useTimeTaskStore((store) => [
+    store.timeTasks,
+    store.removeTimeTask,
   ]);
 
   const filteredScenes = useMemo(() => {
     if (search) {
-      return scenes.filter((scene) => {
+      return timeTasks.filter((scene) => {
         return scene.name.includes(search);
       });
     } else {
-      return scenes;
+      return timeTasks;
     }
-  }, [scenes, search]);
+  }, [timeTasks, search]);
 
   return (
     <View flex useSafeArea bg-$backgroundDefault>
@@ -68,7 +68,7 @@ export default function TimeTaskScreen() {
             <View center gap-s1>
               <Inbox size={24} color={Colors.$textDefault} />
               <Text>
-                {search && scenes.length > 0
+                {search && timeTasks.length > 0
                   ? "未搜索到定时任务"
                   : "暂无定时任务"}
               </Text>
@@ -92,14 +92,14 @@ export default function TimeTaskScreen() {
                 text: "删除",
                 background: Colors.$backgroundDangerHeavy,
                 onPress: () => {
-                  removeScene(item.name);
+                  removeTimeTask(item.name);
                 },
               },
             ]}
           >
-            <SceneItem
-              scene={item}
-              onPress={() => router.push(`/scenes/detail/${item.name}`)}
+            <TimeTaskItem
+              timeTask={item}
+              onPress={() => router.push(`/timeTask/detail/${item.name}`)}
             />
           </Drawer>
         )}

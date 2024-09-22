@@ -54,7 +54,7 @@ export default function SceneDetail() {
     return scenes
       .map((scene) => scene.name)
       .filter((name) => name !== currentScene?.name);
-  }, [scenes]);
+  }, [scenes, currentScene]);
 
   const [error, setError] = useState<string>();
   const handleSubmit = () => {
@@ -116,7 +116,7 @@ export default function SceneDetail() {
       />
 
       <SegmentedControl
-        initialIndex={0}
+        initialIndex={value.type === "solid" ? 0 : 1}
         onChangeIndex={(index) => {
           if (index === 0) {
             setValue({
@@ -163,7 +163,7 @@ export default function SceneDetail() {
         showClearButton
         validateOnBlur
         enableErrors
-        validate={["required", (value: string) => !names.includes(value)]}
+        validate={["required", (value) => !!value && !names.includes(value)]}
         validationMessage={["请输入名称", "该名称已被使用"]}
         maxLength={10}
         showCharCounter
