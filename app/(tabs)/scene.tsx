@@ -66,7 +66,7 @@ export default function SceneScreen() {
         ListEmptyComponent={
           <View center height={500}>
             <View center gap-s1>
-              <Inbox size={24} color={Colors.$textDefault} />
+              <Inbox size={24} color={Colors.$textDisabled} />
               <Text>
                 {search && scenes.length > 0 ? "未搜索到场景" : "暂无场景"}
               </Text>

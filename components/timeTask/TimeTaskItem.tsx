@@ -25,7 +25,7 @@ export const TimeTaskItem = ({
             height: 28,
             width: 28,
             borderWidth: 0.5,
-            borderColor: Colors.$outlineNeutralHeavy,
+            borderColor: Colors.$textGeneral,
             borderRadius: 20,
           }}
           center

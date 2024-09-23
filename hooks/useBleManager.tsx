@@ -1,13 +1,20 @@
 import { useAsyncEffect, useMemoizedFn } from "ahooks";
 import { ActivityAction, startActivityAsync } from "expo-intent-launcher";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PermissionsAndroid, Platform } from "react-native";
 import { BleManager, Device, State } from "react-native-ble-plx";
-import { Button, Colors, Incubator, Text, View } from "react-native-ui-lib";
+import {
+  BorderRadiuses,
+  Button,
+  Colors,
+  Incubator,
+  Text,
+  View,
+} from "react-native-ui-lib";
 
 const { Toast, Dialog } = Incubator;
 
-export const manager = new BleManager();
+export let manager = new BleManager();
 
 async function requestPermissions() {
   if (Platform.OS === "ios") {
@@ -60,6 +67,8 @@ export const useBle = () => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [error, setError] = useState<string>();
   const [isOpen, setIsOpen] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const resolveRef = useRef<(data: boolean) => void>();
 
   useEffect(() => {
     manager.state().then((state) => {
@@ -79,23 +88,27 @@ export const useBle = () => {
   }, []);
 
   const checkCloseState = useMemoizedFn(() => {
-    if (state === State.PoweredOff) {
-      setIsOpen(true);
-      return false;
-    }
-
-    return true;
+    return new Promise<boolean>((resolve, reject) => {
+      if (state === State.PoweredOff) {
+        setIsOpen(true);
+        resolveRef.current = resolve;
+      } else {
+        resolve(true);
+      }
+    });
   });
 
   const startScan = useMemoizedFn(async (timeout?: number) => {
     try {
-      if (checkCloseState()) {
+      if (await checkCloseState()) {
         if (timeout) {
           setTimeout(() => {
             stopScan();
+            setIsScanning(false);
           }, timeout * 1000);
         }
 
+        setIsScanning(true);
         await manager.startDeviceScan(null, null, (error, scannedDevice) => {
           if (error) {
             setError(`${error}`);
@@ -105,7 +118,10 @@ export const useBle = () => {
             scannedDevice &&
             !devices.some((d) => d.id === scannedDevice.id)
           ) {
-            setDevices((devices) => [...devices, scannedDevice]);
+            if (!devices.find((d) => d.id === scannedDevice.id)) {
+              devices.push(scannedDevice);
+              setDevices((devices) => [...devices]);
+            }
           }
         });
       }
@@ -145,6 +161,9 @@ export const useBle = () => {
       modalProps={{
         overlayBackgroundColor: "rgba(0,0,0,0.5)",
       }}
+      containerStyle={{
+        borderRadius: BorderRadiuses.br50,
+      }}
     >
       <View
         padding-16
@@ -166,15 +185,16 @@ export const useBle = () => {
           }}
         >
           <Button
-            size="medium"
+            size="small"
             label="取消"
-            backgroundColor={Colors.$backgroundDangerHeavy}
+            backgroundColor={Colors.$textGeneral}
             onPress={() => {
               setIsOpen(false);
+              resolveRef.current?.(false);
             }}
           />
           <Button
-            size="medium"
+            size="small"
             label="确定"
             onPress={async () => {
               try {
@@ -183,8 +203,8 @@ export const useBle = () => {
                 } else {
                   await manager.enable();
                 }
+                resolveRef.current?.(true);
               } catch (error) {
-                console.log(error);
               } finally {
                 setIsOpen(false);
               }
@@ -196,6 +216,7 @@ export const useBle = () => {
   );
 
   return {
+    isScanning,
     state,
     devices,
     isAuthorized,
