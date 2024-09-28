@@ -1,8 +1,14 @@
 import { useBle } from "@/hooks/useBleManager";
-import { Stack } from "expo-router";
-import { Bluetooth, Inbox } from "lucide-react-native";
+import { Stack, useRouter } from "expo-router";
+import { Bluetooth, Inbox, RefreshCcw } from "lucide-react-native";
 import { useEffect } from "react";
 import { RefreshControl, ScrollView } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import {
   Button,
   Text,
@@ -14,6 +20,22 @@ import {
 export default function ScanDevice() {
   const { devices, startScan, ErrorToast, BleOpenDialog, isScanning } =
     useBle();
+  const router = useRouter();
+  const rotate = useSharedValue(0);
+
+  useEffect(() => {
+    if (isScanning) {
+      rotate.value = withRepeat(
+        withTiming(rotate.value + 1, {
+          duration: 2500,
+        })
+      );
+    }
+  }, [isScanning]);
+
+  const animatedStyles = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotate.value * 360}deg` }],
+  }));
 
   useEffect(() => {
     startScan(5);
@@ -23,20 +45,19 @@ export default function ScanDevice() {
     <>
       <Stack.Screen
         options={{
-          title: "扫描设备",
+          title: "设备",
           headerShown: true,
           headerTitleStyle: { fontSize: 16 },
           headerRight: () => {
             return (
-              <Button
+              <TouchableOpacity
                 disabled={isScanning}
-                label="刷新"
-                link
-                linkColor={Colors.$textGeneral}
-                onPress={() => {
-                  startScan(5);
-                }}
-              />
+                onPress={() => startScan(5)}
+              >
+                <Animated.View style={animatedStyles}>
+                  <RefreshCcw size={24} color={Colors.$textGeneral} />
+                </Animated.View>
+              </TouchableOpacity>
             );
           },
         }}
@@ -108,8 +129,7 @@ export default function ScanDevice() {
                       disabled={!device.isConnectable}
                       label="连接"
                       onPress={() => {
-                        device.isConnectable;
-                        console.log("连接", device);
+                        router.push(`/devices/connect/${device.id}`);
                       }}
                       size="small"
                     />

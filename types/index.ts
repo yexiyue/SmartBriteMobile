@@ -26,11 +26,13 @@ export type RemoveTask = {
   data: string;
 };
 
+export type Operation = "open" | "close" | "reset";
+
 export type AddTask = {
   type: "addTask";
   data: {
     name: string;
-    operation: "open" | "close" | "reset";
+    operation: Operation;
   } & (
     | {
         kind: "once";

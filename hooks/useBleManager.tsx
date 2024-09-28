@@ -55,12 +55,6 @@ async function requestPermissions() {
   return false;
 }
 
-const connectDevice = async (deviceId: Device["id"]) => {
-  const device = await manager.connectToDevice(deviceId);
-  const connectedDevice = await device.connect();
-  return await connectedDevice.discoverAllServicesAndCharacteristics();
-};
-
 export const useBle = () => {
   const [state, setState] = useState<State>();
   const [devices, setDevices] = useState<Device[]>([]);
@@ -88,7 +82,7 @@ export const useBle = () => {
   }, []);
 
   const checkCloseState = useMemoizedFn(() => {
-    return new Promise<boolean>((resolve, reject) => {
+    return new Promise<boolean>((resolve) => {
       if (state === State.PoweredOff) {
         setIsOpen(true);
         resolveRef.current = resolve;
@@ -109,21 +103,25 @@ export const useBle = () => {
         }
 
         setIsScanning(true);
-        await manager.startDeviceScan(null, null, (error, scannedDevice) => {
-          if (error) {
-            setError(`${error}`);
-            return;
-          }
-          if (
-            scannedDevice &&
-            !devices.some((d) => d.id === scannedDevice.id)
-          ) {
-            if (!devices.find((d) => d.id === scannedDevice.id)) {
-              devices.push(scannedDevice);
-              setDevices((devices) => [...devices]);
+        await manager.startDeviceScan(
+          ["e572775c-0df9-4b44-926b-b692e31d6971"],
+          null,
+          (error, scannedDevice) => {
+            if (error) {
+              setError(`${error}`);
+              return;
+            }
+            if (
+              scannedDevice &&
+              !devices.some((d) => d.id === scannedDevice.id)
+            ) {
+              if (!devices.find((d) => d.id === scannedDevice.id)) {
+                devices.push(scannedDevice);
+                setDevices((devices) => [...devices]);
+              }
             }
           }
-        });
+        );
       }
     } catch (error) {
       setError(`${error}`);
@@ -229,6 +227,3 @@ export const useBle = () => {
   };
 };
 
-export function uint8ArrayToBase64(arr: number[]) {
-  return btoa(String.fromCharCode.apply(null, arr));
-}
